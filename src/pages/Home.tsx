@@ -4,7 +4,6 @@ import { ArrowRight, Shield, Zap, Droplets, Leaf, Star, ChevronRight, Building2,
 import { supabase } from '../lib/supabase';
 import { Product, Testimonial } from '../types';
 import ProductCard from '../components/ProductCard';
-import ReviewModal from '../components/ReviewModal';
 
 const heroSlides = [
   {
@@ -62,31 +61,14 @@ export default function Home() {
   const [featured, setFeatured] = useState<Product[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-
-  const fetchTestimonials = () => {
-    supabase.from('testimonials').select('*').order('created_at', { ascending: false }).limit(3).then(({ data }) => {
-      if (data) setTestimonials(data);
-    });
-  };
 
   useEffect(() => {
     supabase.from('products').select('*').eq('featured', true).order('sort_order').then(({ data }) => {
       if (data) setFeatured(data);
     });
-    fetchTestimonials();
-
-    // Real-time subscription for testimonials
-    const subscription = supabase
-      .channel('testimonials-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'testimonials' }, () => {
-        fetchTestimonials();
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    supabase.from('testimonials').select('*').eq('featured', true).then(({ data }) => {
+      if (data) setTestimonials(data);
+    });
   }, []);
 
   useEffect(() => {
@@ -184,84 +166,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us Section with Image and Hover Products */}
-      <section className="py-24 bg-gradient-to-b from-white to-green-50">
+      {/* Benefits Section */}
+      <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-green-600 font-semibold text-sm uppercase tracking-wider">Why Choose Us</span>
-            <h2 className="text-5xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent mt-3 mb-4">
-              Built for Your Daily Wellness
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
-              Every product is meticulously crafted with premium organic ingredients, optimal formulation, and scientifically-proven benefits you can genuinely feel.
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Built for Your Daily Wellness</h2>
+            <p className="text-gray-500 max-w-xl mx-auto text-lg">
+              Every product is crafted with intention — clean ingredients, optimal dosing, and results you can feel.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-            <div className="relative h-96 rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src="https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg"
-                alt="Why Choose Us"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-            </div>
-
-            <div className="space-y-6">
-              {benefits.map((b, i) => (
-                <div key={b.title} className="group p-6 rounded-2xl bg-white border-2 border-gray-100 hover:border-green-400 hover:shadow-xl transition-all duration-300 cursor-pointer">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-16 h-16 rounded-2xl ${b.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                      <b.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">{b.title}</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed group-hover:text-gray-800 transition-colors">{b.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Product Hover Cards */}
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900">Our Best Sellers</h3>
-            <p className="text-gray-600 mt-2">Hover over any product for details or click to explore</p>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featured.length > 0 ? featured.slice(0, 4).map(product => (
-              <div key={product.id} className="group relative">
-                <div className="relative h-80 rounded-3xl overflow-hidden shadow-lg border-4 border-green-100 hover:border-green-500 transition-all duration-300">
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  {/* Circle with + icon on hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-2xl transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                      <ChevronRight className="w-10 h-10 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Description Popup */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-6 translate-y-12 group-hover:translate-y-0 transition-transform duration-300">
-                    <h4 className="text-white font-bold text-lg mb-2">{product.name}</h4>
-                    <p className="text-green-100 text-sm leading-relaxed mb-4 line-clamp-3">{product.short_description}</p>
-                    <Link
-                      to={`/product/${product.slug}`}
-                      className="inline-block px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-full transition-colors"
-                    >
-                      View Product
-                    </Link>
-                  </div>
+            {benefits.map(b => (
+              <div key={b.title} className="group p-8 rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-300">
+                <div className={`w-14 h-14 rounded-2xl ${b.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <b.icon className="w-7 h-7" />
                 </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">{b.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{b.desc}</p>
               </div>
-            )) : null}
+            ))}
           </div>
         </div>
       </section>
@@ -333,86 +258,58 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Spirulina Section - Enhanced */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.pexels.com/photos/3551711/pexels-photo-3551711.jpeg"
-            alt=""
-            className="w-full h-full object-cover brightness-30"
-          />
+      {/* Why Spirulina Section */}
+      <section className="py-24 bg-green-900 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <img src="https://images.pexels.com/photos/3551711/pexels-photo-3551711.jpeg" alt="" className="w-full h-full object-cover" />
         </div>
-
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Left: Content */}
-            <div className="z-10">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-green-500/20 backdrop-blur-sm border border-green-400/50 text-green-300 text-sm font-semibold uppercase tracking-widest mb-6">
-                The Science of Wellness
-              </span>
-              <h2 className="text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Why <span className="text-green-400">Spirulina</span>?
-              </h2>
-              <p className="text-xl text-gray-200 leading-relaxed mb-10">
-                Spirulina stands as the most nutrient-dense superfood on Earth. NASA has designated it the "food of the future" - the same source trusted by astronauts for complete space-based nutrition.
+            <div>
+              <span className="text-green-400 font-semibold text-sm uppercase tracking-wider">The Science</span>
+              <h2 className="text-4xl font-bold text-white mt-3 mb-6">Why Spirulina?</h2>
+              <p className="text-green-100 text-lg leading-relaxed mb-8">
+                Spirulina is gram-for-gram one of the most nutrient-dense foods on Earth. NASA has declared it the "food of the future" — used by astronauts for complete nutrition in space.
               </p>
-              <ul className="space-y-5 mb-10">
+              <ul className="space-y-4">
                 {[
-                  { stat: '70%', desc: 'Complete protein - more than meat, by weight' },
-                  { stat: '10x', desc: 'More antioxidants than premium green tea' },
-                  { stat: '26mg', desc: 'Iron content per 100g vs 2.7mg in spinach' },
-                  { stat: '100%', desc: 'Only plant source of Gamma-Linolenic Acid (GLA)' },
-                  { stat: '8', desc: 'Essential amino acids - all present' },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-4 group cursor-pointer">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-500/20 border border-green-400/50 group-hover:bg-green-500/40 transition-colors">
-                        <span className="text-green-300 font-bold text-sm">{item.stat}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-gray-100 font-medium group-hover:text-green-300 transition-colors">{item.desc}</p>
-                    </div>
+                  'Contains 70% complete protein — more than meat, by weight',
+                  '10x more antioxidants than green tea',
+                  'Rich in iron — 26mg per 100g vs 2.7mg in spinach',
+                  'Only plant source of Gamma-Linolenic Acid (GLA)',
+                  'Contains all 8 essential amino acids',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-3 text-green-100">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 to="/blog/10-benefits-spirulina"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-green-500/30"
+                className="inline-flex items-center gap-2 mt-8 text-green-400 font-semibold hover:text-green-300 transition-colors"
               >
-                Explore Full Science <ArrowRight className="w-5 h-5" />
+                Read the science <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-
-            {/* Right: 4 Product Images Popup */}
-            <div className="relative z-10 grid grid-cols-2 gap-6">
-              {featured.length > 0 && featured.slice(0, 4).map((product, idx) => (
-                <div key={product.id} className="group relative">
-                  <Link
-                    to={`/product/${product.slug}`}
-                    className="relative h-56 rounded-2xl overflow-hidden block shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                  >
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {/* Info on Hover */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-6 group-hover:translate-y-0 transition-transform duration-300">
-                      <h3 className="text-white font-bold text-base mb-1">{product.name}</h3>
-                      <p className="text-green-200 text-xs line-clamp-2 mb-3">{product.short_description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-green-300 font-bold">₹{product.price}</span>
-                        <span className="inline-flex items-center gap-1 text-green-300 text-xs font-semibold">
-                          View <ChevronRight className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+            <div className="relative">
+              <img
+                src="https://images.pexels.com/photos/3622608/pexels-photo-3622608.jpeg"
+                alt="Organic superfood"
+                className="rounded-3xl w-full h-96 object-cover shadow-2xl"
+              />
+              <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-5 shadow-xl">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Leaf className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900 text-sm">Certified Organic</div>
+                    <div className="text-gray-500 text-xs">Cold-pressed & preserved</div>
+                  </div>
                 </div>
-              ))}
+                <div className="text-xs text-gray-400">Zero additives, zero preservatives</div>
+              </div>
             </div>
           </div>
         </div>
@@ -480,77 +377,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials - Real-Time Reviews */}
+      {/* Testimonials */}
       {testimonials.length > 0 && (
-        <section className="py-24 bg-gradient-to-b from-green-50 to-white">
+        <section className="py-24 bg-green-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <span className="text-green-600 font-semibold text-sm uppercase tracking-wider">Real Results</span>
-              <h2 className="text-5xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent mt-3 mb-4">
-                What Our Customers Say
-              </h2>
-              <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                Real testimonials from real people experiencing real transformations with Tatvamasi.
-              </p>
+              <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">What Our Customers Say</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {testimonials.slice(0, 3).map(t => (
-                <div
-                  key={t.id}
-                  className="group relative bg-white rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-300 border-2 border-green-100 hover:border-green-400 overflow-hidden"
-                >
-                  {/* Background gradient on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="relative z-10">
-                    {/* Stars */}
-                    <div className="flex items-center gap-1 mb-5">
-                      {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} className="w-5 h-5 fill-amber-400 text-amber-400 group-hover:scale-110 transition-transform" />
-                      ))}
-                      <span className="ml-3 text-xs font-semibold text-gray-500 group-hover:text-green-600 transition-colors">
-                        {t.rating}.0 / 5.0
-                      </span>
-                    </div>
-
-                    {/* Quote */}
-                    <p className="text-gray-800 leading-relaxed mb-7 italic text-base group-hover:text-gray-900 transition-colors font-medium">
-                      "{t.content}"
-                    </p>
-
-                    {/* Divider */}
-                    <div className="w-12 h-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mb-6" />
-
-                    {/* Author */}
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={t.image_url}
-                        alt={t.name}
-                        className="w-14 h-14 rounded-full object-cover ring-2 ring-green-200 group-hover:ring-green-400 transition-all"
-                      />
-                      <div>
-                        <div className="font-bold text-gray-900 text-base group-hover:text-green-700 transition-colors">
-                          {t.name}
-                        </div>
-                        <div className="text-gray-500 text-xs font-medium">{t.role}</div>
-                      </div>
+                <div key={t.id} className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow border border-green-100">
+                  <div className="flex items-center gap-1 mb-4">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed mb-6 italic">"{t.content}"</p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={t.image_url}
+                      alt={t.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">{t.name}</div>
+                      <div className="text-gray-500 text-xs">{t.role}</div>
                     </div>
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <p className="text-gray-600 mb-6">Join thousands of satisfied customers. Share your Tatvamasi story.</p>
-              <a
-                href="https://wa.me/919999999999?text=I%20would%20like%20to%20share%20my%20Tatvamasi%20experience"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full transition-colors"
-              >
-                Share Your Review <ArrowRight className="w-4 h-4" />
-              </a>
             </div>
           </div>
         </section>
